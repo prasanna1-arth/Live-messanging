@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Chat</title>
+    <script type="module">
+        // **✅ Firebase CDN Import (ES6)**
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+        // **✅ Firebase Config (Replace with your credentials)**
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // **✅ Initialize Firebase**
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // **✅ Username Mapping**
+        const users = {
+            "Diyan": "Diyan Sharma",
+            "Subin": "Subin Tamang",
+            "Ananta": "Ananta Sapkota",
+            "Bishal": "Bishal Tamang",
+            "Sushil": "Sushil",
+            "Sachin": "Sachin Sapkota",
+            "Sijan": "Sijan Sapkota",
+            "Adream": "Adream Neaupane",
+            "Samyog": "Samyog Sapkota",
+            "Prasanna": "Prasanna Sapkota"
+        };
+
+        let currentUser = null;
+
+        // **✅ Login Function**
+        window.login = function () {
+            const username = document.getElementById("username").value.trim();
+            const password = document.getElementById("password").value.trim();
+            const errorMessage = document.getElementById("error-message");
+
+            if (!users[username]) {
+                errorMessage.innerText = "❌ Invalid Username!";
+                return;
+            }
+
+            if (password !== "444") {
+                errorMessage.innerText = "❌ Incorrect Password!";
+                return;
+            }
+
+            currentUser = users[username];
+            document.getElementById("login-box").style.display = "none";
+            document.getElementById("chat-box").style.display = "block";
+            document.getElementById("currentUser").innerText = currentUser;
+            loadMessages();
+        };
+
+        // **✅ Logout Function**
+        window.logout = function () {
+            currentUser = null;
+            document.getElementById("login-box").style.display = "block";
+            document.getElementById("chat-box").style.display = "none";
+            document.getElementById("username").value = "";
+            document.getElementById("password").value = "";
+            document.getElementById("error-message").innerText = "";
+        };
+
+        // **✅ Send Message Function**
+        window.sendMessage = function () {
+            const messageInput = document.getElementById("messageInput");
+            const message = messageInput.value.trim();
+            if (message) {
+                push(ref(db, "messages"), {
+                    user: currentUser,
+                    text: message,
+                    timestamp: new Date().toISOString()
+                });
+                messageInput.value = "";
+            }
+        };
+
+        // **✅ Load Messages Function**
+        function loadMessages() {
+            onChildAdded(ref(db, "messages"), (snapshot) => {
+                const data = snapshot.val();
+                const messageDiv = document.createElement("div");
+                messageDiv.classList.add("message");
+                if (data.user === currentUser) {
+                    messageDiv.classList.add("user-message");
+                }
+                messageDiv.innerHTML = `<strong>${data.user}:</strong> ${data.text}`;
+                document.getElementById("messages").appendChild(messageDiv);
+                document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+            });
+        }
+    </script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; }
+        .container { max-width: 400px; margin: 50px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        input, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        button { background: #28a745; color: white; cursor: pointer; }
+        #chat-box { display: none; margin-top: 20px; }
+        #messages { height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: white; text-align: left; }
+        .message { padding: 8px; margin: 5px 0; border-radius: 5px; background: #e9ecef; }
+        .user-message { background: #d1ecf1; text-align: right; }
+        .error { color: red; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="login-box">
+        <h2>Login to Chat</h2>
+        <input type="text" id="username" placeholder="Enter Username">
+        <input type="password" id="password" placeholder="Enter Password">
+        <p class="error" id="error-message"></p>
+        <button onclick="login()">Login</button>
+    </div>
+
+    <div class="container" id="chat-box">
+        <h2>Welcome, <span id="currentUser"></span>!</h2>
+        <div id="messages"></div>
+        <input type="text" id="messageInput" placeholder="Type a message">
+        <button onclick="sendMessage()">Send</button>
+        <button onclick="logout()" style="background: #dc3545;">Logout</button>
+    </div>
+
+</body>
+</html>
